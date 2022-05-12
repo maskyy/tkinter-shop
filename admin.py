@@ -118,7 +118,9 @@ class Admin(Window):
         barcode, name, manufacturer, amount, price = info
         if not self.validate_add_data(barcode, price):
             return
-        if 
+        if self.product_exists(barcode):
+            print("aaa")
+
         if not self.validate_data(barcode, name, manufacturer, amount, price):
             return
         print(info)
