@@ -14,8 +14,9 @@ __all__ = ["Admin"]
 
 
 class DeliveryActions(_enum.Enum):
-    ADD = 0
-    REPLACE = 1
+    INSERT = "Вставить"
+    ADD = "Добавить"
+    UPDATE = "Обновить"
 
 
 class Admin(Window):
@@ -78,22 +79,24 @@ class Admin(Window):
             entries.append(e)
         return entries
 
-    def validate_add_data(self, barcode):
+    def validate_add_data(self, barcode, amount):
         if not barcode or len(barcode) != 13 or not barcode.isdigit():
             self.show_error("Введите штрихкод из 13 цифр")
             return False
 
-    def validate_other_data(self, name, manufacturer, amount, price):
+        if not amount or (not amount.isdigit() or int(amount) < 0):
+            self.show_error("Количество должно быть целым неотрицательным числом")
+            return False
+
+        return True
+
+    def validate_other_data(self, name, manufacturer, price):
         if not name:
             self.show_error("Наименование товара не должно быть пустым")
             return False
 
         if not manufacturer:
             self.show_error("Производитель не должен быть пустым")
-            return False
-
-        if not amount or (not amount.isdigit() or int(amount) < 0):
-            self.show_error("Количество должно быть целым неотрицательным числом")
             return False
 
         if not price or (not price.isdigit() or int(price) < 0):
@@ -116,14 +119,22 @@ class Admin(Window):
     def add_product(self):
         info = [e.get_strip() for e in self.product_info]
         barcode, name, manufacturer, amount, price = info
-        if not self.validate_add_data(barcode, price):
+        action = DeliveryActions.INSERT
+
+        if not self.validate_add_data(barcode, amount):
             return
         if self.product_exists(barcode):
-            print("aaa")
+            result = _msg.askyesno("", "Да - добавить количество к существующему товару, нет - обновить его данные")
+            if result:
+                action = DeliveryActions.ADD
+            else:
+                action = DeliveryActions.UPDATE
 
-        if not self.validate_data(barcode, name, manufacturer, amount, price):
+        if action != DeliveryActions.ADD and not self.validate_other_data(name, manufacturer, price):
             return
-        print(info)
+        
+        action = action.value
+        self.delivery.insert("", "end", values=info + [action])
 
     def create_sales(self, master):
         frame = _ttk.Frame(master)

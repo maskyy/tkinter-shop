@@ -30,7 +30,7 @@ class TableView(_ttk.Treeview):
 
         for row in self.db.get_table(self.table):
             row = tuple(str(x) for x in row)
-            self.insert("", "end", text="", values=row)
+            self.insert("", "end", values=row)
 
     def on_select(self, event, func):
         if func is None:
