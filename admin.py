@@ -66,6 +66,9 @@ class Admin(Window):
         subframe.grid(column=1, row=0, sticky="n", padx=10, pady=20)
         self.product_info = self.add_product_entries(subframe)
         _ttk.Button(subframe, text="Добавить", command=self.add_product).pack(pady=2)
+        _ttk.Button(
+            subframe, text="Завершить поставку", command=self.make_delivery
+        ).pack(pady=40)
 
         return frame
 
@@ -124,17 +127,38 @@ class Admin(Window):
         if not self.validate_add_data(barcode, amount):
             return
         if self.product_exists(barcode):
-            result = _msg.askyesno("", "Да - добавить количество к существующему товару, нет - обновить его данные")
+            result = _msg.askyesno(
+                "",
+                "Да - добавить количество к существующему товару, нет - обновить его данные",
+            )
             if result:
                 action = DeliveryActions.ADD
             else:
                 action = DeliveryActions.UPDATE
 
-        if action != DeliveryActions.ADD and not self.validate_other_data(name, manufacturer, price):
+        if action != DeliveryActions.ADD and not self.validate_other_data(
+            name, manufacturer, price
+        ):
             return
-        
-        action = action.value
-        self.delivery.insert("", "end", values=info + [action])
+
+        self.delivery.insert("", "end", values=info + [action.value])
+        [e.delete(0, "end") for e in self.product_info]
+
+    def make_delivery(self):
+        for row in self.delivery.get_children():
+            row = self.delivery.item(row)["values"]
+            if row[-1] == DeliveryActions.INSERT.value:
+                self.db.add_product(*row[:-1])
+            elif row[-1] == DeliveryActions.ADD.value:
+                self.db.change_by_amount(row[0], row[3])
+            else:
+                kwargs = dict(
+                    zip(["name", "manufacturer", "amount", "price"], row[1:-1])
+                )
+                self.db.update_product(row[0], **kwargs)
+
+        self.delivery.clear()
+        self.goods.update_data()
 
     def create_sales(self, master):
         frame = _ttk.Frame(master)

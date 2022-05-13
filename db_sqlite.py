@@ -75,11 +75,28 @@ class Database:
         _check_args(5, args)
         self.cur.execute("INSERT INTO goods VALUES (?, ?, ?, ?, ?)", args)
 
-    def update_product(self, barcode, *args):
-        _check_args(4, args)
+    def update_product(self, barcode, **kwargs):
+        set_str = ""
+        data = []
+        for key in ["name", "manufacturer", "amount", "price"]:
+            if key in kwargs:
+                data.append(kwargs[key])
+                set_str += key + " = ?, "
+        data.append(barcode)
+        data = tuple(data)
+        set_str = set_str[:-2]
+        self.cur.execute("UPDATE goods SET %s WHERE barcode = ?" % set_str, data)
+
+    def change_by_amount(self, barcode, amount):
+        self.cur.execute("SELECT amount FROM goods WHERE barcode = ?", (barcode,))
+        current = self.cur.fetchone()
+        if not current:
+            print("Item not found!")
+            return False
+        current = current[0]
+        new = current + amount
         self.cur.execute(
-            "UPDATE goods SET name = ?, manufacturer = ?, amount = ?, price = ? WHERE barcode = ?",
-            args + (barcode,),
+            "UPDATE goods SET amount = ? WHERE barcode = ?", (barcode, new)
         )
 
     def get_new_check_id(self):
@@ -90,6 +107,7 @@ class Database:
         self.cur.execute("INSERT INTO checks VALUES (?, 0)", (id_,))
 
     def sell_product(self, check_id, barcode, amount, cost):
+        """
         count = self.cur.execute(
             "SELECT amount FROM goods WHERE barcode = ?", (barcode,)
         ).fetchone()[0]
@@ -97,6 +115,8 @@ class Database:
         self.cur.execute(
             "UPDATE goods SET amount = ? WHERE barcode = ?", (new_amount, barcode)
         )
+        """
+        self.change_by_amount(barcode, -amount)
 
         self.cur.execute(
             "INSERT INTO sales VALUES (NULL, ?, ?, ?, ?)",
