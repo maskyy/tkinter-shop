@@ -2,12 +2,13 @@ import tkinter as _tk
 import tkinter.ttk as _ttk
 
 import logo
+import util
 from db_sqlite import Database
 from login import Login
-from window import Window
-from tabs import Tabs
-from tableview import TableView
 from style import Entry
+from tableview import TableView
+from tabs import Tabs
+from window import Window
 
 __all__ = ["Cashier"]
 
@@ -38,7 +39,7 @@ class Cashier(Window):
             "Количество",
             "Цена",
         ]
-        self.goods = TableView(main, self.db, "goods", goods_cols)
+        self.goods = TableView(main, self.db, "goods", goods_cols, self.on_good_select)
         self.goods.grid(column=0, row=1, sticky="nsew", padx=20)
         self.goods.update_data()
 
@@ -63,13 +64,16 @@ class Cashier(Window):
         _ttk.Label(master, text="Штрихкод").grid(column=0, row=0, padx=5)
         _ttk.Label(master, text="Количество").grid(column=0, row=1, padx=5)
 
-        self.item_code = Entry(master)
-        self.item_code.grid(column=1, row=0, padx=5, pady=5)
-        self.item_amount = Entry(master)
-        self.item_amount.grid(column=1, row=1, padx=5, pady=5)
+        self.code = Entry(master)
+        self.code.grid(column=1, row=0, padx=5, pady=5)
+        self.amount = Entry(master)
+        self.amount.grid(column=1, row=1, padx=5, pady=5)
 
-        self.add_item = _ttk.Button(master, text="Добавить")
-        self.add_item.grid(column=0, row=2, columnspan=2, pady=5)
+        self.add = _ttk.Button(master, text="Добавить", command=self.on_add_item)
+        self.add.grid(column=0, row=2, columnspan=2, pady=5)
+
+        self.code.bind("<Return>", lambda _: self.add.invoke())
+        self.amount.bind("<Return>", lambda _: self.add.invoke())
 
     def create_confirm_window(self):
         self.confirm_window = _tk.Toplevel(self)
@@ -77,14 +81,64 @@ class Cashier(Window):
         self.confirm_return.pack()
         self.confirm_window.withdraw()
 
+    def find_row(self, table, code):
+        for row in table.get_children():
+            if int(code) == table.item(row)["values"][0]:
+                return row, table.item(row)["values"]
+        return None, None
+
+    def on_good_select(self, _, selected):
+        self.code.delete(0, "end")
+        self.amount.delete(0, "end")
+        self.code.insert(0, selected["values"][0])
+        self.amount.insert(0, 1)
+        self.code.focus()
+
+    def on_add_item(self):
+        code, amount = self.code.get_strip(), self.amount.get_strip()
+        if not code or len(code) != 13 or not code.isdigit():
+            return util.show_error("Введите штрихкод из 13 цифр")
+
+        row, values = self.find_row(self.goods, code)
+
+        if not row:
+            return util.show_error("Штрихкод не найден")
+        if not amount.isdigit() or int(amount) <= 0:
+            return util.show_error("Количество должно быть целым положительным числом")
+        amount = int(amount)
+        if amount > values[3]:
+            return util.show_error("Нельзя продать больше товаров, чем есть в наличии")
+
+        self.change_by_amount(code, -amount, row)
+        self.add_to_check(code, amount, row)
+        self.update_check_sum()
+
+        self.code.delete(0, "end")
+        self.amount.delete(0, "end")
+
+    def change_by_amount(self, code, amount, row):
+        values = self.goods.item(row)["values"]
+        values[3] += amount
+        self.goods.item(row, values=values)
+
+    def add_to_check(self, code, amount, row):
+        cost = amount * self.goods.item(row)["values"][4]
+        self.check.insert("", "end", values=(code, amount, cost))
+
     def update_check_id(self):
         self.check_id = self.db.get_new_check_id()
         self.check_text.config(text="Чек №%d" % self.check_id)
+    
+    def update_check_sum(self):
+        result = 0
+        for row in self.check.get_children():
+            result += self.check.item(row)["values"][2]
+        self.check_sum.config(text="Сумма: %d" % result)
 
 
 if __name__ == "__main__":
     root = _tk.Tk()
     root.withdraw()
     cashier = Cashier()
-    cashier.protocol("WM_DELETE_WINDOW", root.destroy)
+    util.set_close_handler(cashier, root.destroy)
     cashier.mainloop()

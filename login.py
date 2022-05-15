@@ -1,7 +1,7 @@
 import enum as _enum
 import functools as _ft
-import tkinter.ttk as _ttk
 import tkinter.messagebox as _msg
+import tkinter.ttk as _ttk
 
 import style
 

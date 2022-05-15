@@ -4,10 +4,11 @@ import tkinter.messagebox as _msg
 import tkinter.ttk as _ttk
 
 import logo
+import util
 from db_sqlite import Database
-from tabs import Tabs
-from tableview import TableView
 from style import Entry
+from tableview import TableView
+from tabs import Tabs
 from window import Window
 
 __all__ = ["Admin"]
@@ -43,9 +44,6 @@ class Admin(Window):
                 self.create_sales: "Продажи",
             }
         )
-
-    def show_error(self, text):
-        _msg.showerror("Ошибка", text)
 
     def create_goods(self, master):
         frame = _ttk.Frame(master)
@@ -84,27 +82,22 @@ class Admin(Window):
 
     def validate_add_data(self, barcode, amount):
         if not barcode or len(barcode) != 13 or not barcode.isdigit():
-            self.show_error("Введите штрихкод из 13 цифр")
-            return False
+            return util.show_error("Введите штрихкод из 13 цифр")
 
         if not amount or (not amount.isdigit() or int(amount) < 0):
-            self.show_error("Количество должно быть целым неотрицательным числом")
-            return False
+            return util.show_error("Количество должно быть целым неотрицательным числом")
 
         return True
 
     def validate_other_data(self, name, manufacturer, price):
         if not name:
-            self.show_error("Наименование товара не должно быть пустым")
-            return False
+            return util.show_error("Наименование товара не должно быть пустым")
 
         if not manufacturer:
-            self.show_error("Производитель не должен быть пустым")
-            return False
+            return util.show_error("Производитель не должен быть пустым")
 
         if not price or (not price.isdigit() or int(price) < 0):
-            self.show_error("Цена должна быть целым неотрицательным числом")
-            return False
+            return util.show_error("Цена должна быть целым неотрицательным числом")
 
         return True
 
@@ -194,5 +187,5 @@ if __name__ == "__main__":
     root = _tk.Tk()
     root.withdraw()
     admin = Admin()
-    admin.protocol("WM_DELETE_WINDOW", root.destroy)
+    util.set_close_handler(admin, root.destroy)
     admin.mainloop()
