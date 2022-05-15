@@ -55,8 +55,8 @@ class Cashier(Window):
 
         self.check_sum = _ttk.Label(check_frame, text="Сумма: 0")
         self.check_sum.pack(pady=5)
-        _ttk.Button(check_frame, text="Продать").pack(pady=5)
-        _ttk.Button(check_frame, text="Вернуть").pack(pady=5)
+        _ttk.Button(check_frame, text="Продать", command=self.on_sell).pack(pady=5)
+        _ttk.Button(check_frame, text="Вернуть", command=self.on_return).pack(pady=5)
 
         self.create_confirm_window()
 
@@ -77,7 +77,9 @@ class Cashier(Window):
 
     def create_confirm_window(self):
         self.confirm_window = _tk.Toplevel(self)
-        self.confirm_return = Login(self.confirm_window, [("Подтвердить", lambda l, p: None)])
+        self.confirm_return = Login(
+            self.confirm_window, [("Подтвердить", lambda l, p: None)]
+        )
         self.confirm_return.pack()
         self.confirm_window.withdraw()
 
@@ -125,10 +127,16 @@ class Cashier(Window):
         cost = amount * self.goods.item(row)["values"][4]
         self.check.insert("", "end", values=(code, amount, cost))
 
+    def on_sell(self):
+        pass
+
+    def on_return(self):
+        pass
+
     def update_check_id(self):
         self.check_id = self.db.get_new_check_id()
         self.check_text.config(text="Чек №%d" % self.check_id)
-    
+
     def update_check_sum(self):
         result = 0
         for row in self.check.get_children():

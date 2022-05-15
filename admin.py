@@ -50,7 +50,9 @@ class Admin(Window):
         self.goods = TableView(frame, self.db, "goods", self.goods_cols)
         self.goods.update_data()
         self.goods.pack(expand=True, fill="both", padx=20, pady=20)
-        _ttk.Button(frame, text="Обновить", command=self.goods.update_data).pack(pady=15)
+        _ttk.Button(frame, text="Обновить", command=self.goods.update_data).pack(
+            pady=15
+        )
         return frame
 
     def create_delivery(self, master):
@@ -85,7 +87,9 @@ class Admin(Window):
             return util.show_error("Введите штрихкод из 13 цифр")
 
         if not amount or (not amount.isdigit() or int(amount) < 0):
-            return util.show_error("Количество должно быть целым неотрицательным числом")
+            return util.show_error(
+                "Количество должно быть целым неотрицательным числом"
+            )
 
         return True
 
