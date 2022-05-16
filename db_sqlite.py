@@ -127,3 +127,26 @@ class Database:
             "UPDATE checks SET sum = sum + ? WHERE id = ?", (cost, check_id)
         )
         """
+
+    def return_check(self, check_id):
+        self.cur.execute("DELETE FROM checks WHERE id = ?", (check_id,))
+        self.cur.execute("DELETE FROM sales WHERE check_id = ?", (check_id,))
+
+    def return_sale(self, id_):
+        self.cur.execute("SELECT check_id FROM sales WHERE id = ?", (id_,))
+        check_id = self.cur.fetchone()
+        if not check_id:
+            print("Check not found!")
+            return False
+        check_id = check_id[0]
+        self.cur.execute("SELECT barcode, amount, cost FROM sales WHERE id = ?", (id_,))
+        barcode, amount, cost = self.cur.fetchone()
+
+        self.change_by_amount(barcode, amount)
+        self.cur.execute(
+            "UPDATE checks SET sum = sum - ? WHERE id = ?", (cost, check_id)
+        )
+        self.cur.execute("DELETE FROM sales WHERE id = ?", (id_,))
+
+    def reset_sales(self):
+        self.cur.executescript("DELETE FROM sales; DELETE FROM checks;")

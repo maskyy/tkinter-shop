@@ -22,6 +22,9 @@ class TableView(_ttk.Treeview):
     def clear(self):
         self.delete(*self.get_children())
 
+    def clear_selection(self):
+        self.selection_remove(self.selection())
+
     def update_data(self):
         if not self.db or not self.table:
             return

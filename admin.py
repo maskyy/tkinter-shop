@@ -164,25 +164,79 @@ class Admin(Window):
         frame.grid_columnconfigure(1, weight=2)
 
         self.checks = TableView(frame, self.db, "checks", ["ID чека", "Сумма"])
-        self.checks.update_data()
         self.checks.grid(column=0, row=0, sticky="ew", padx=5, pady=5)
-
-        self._check_sum = _ttk.Label(frame)
-        self.update_check_sum()
-        self._check_sum.grid(column=0, row=1)
 
         self.sales = TableView(frame, self.db, "sales", column_names)
         self.sales.config(displaycolumns=display_columns)
-        self.sales.update_data()
         self.sales.grid(column=1, row=0, sticky="ew", padx=5, pady=5)
+
+        self._check_sum = _ttk.Label(frame)
+        self._check_sum.grid(column=0, row=1)
+
+        Button(frame, text="Вернуть", command=self.on_return).grid(
+            column=0, row=2, pady=10
+        )
+        Button(frame, text="Сбросить выручку", command=self.on_reset).grid(
+            column=0, row=3, pady=10
+        )
+
+        self.update_sales()
 
         return frame
 
-    def update_check_sum(self):
+    def update_sales(self):
+        self.checks.update_data()
+        self.sales.update_data()
+
         result = 0
         for row in self.checks.get_children():
             result += self.checks.item(row)["values"][1]
         self._check_sum.config(text="Выручка: %d" % result)
+
+    def find_sales(self, check_id):
+        result = []
+        for row in self.sales.get_children():
+            values = self.sales.item(row)["values"]
+            if values[1] == check_id:
+                result.append(row)
+        return result
+
+    def on_return(self):
+        if not self.checks.selection() and not self.sales.selection():
+            return util.show_error("Выберите хотя бы один чек или товар для возврата")
+
+        selected_sales = list(self.sales.selection())
+
+        for check in self.checks.selection():
+            check_id = self.checks.item(check)["values"][0]
+            selected_sales += self.find_sales(check_id)
+        selected_sales = set(selected_sales)
+
+        if not _msg.askyesno(
+            "Подтверждение",
+            "Вернуть чеков: %d, товаров: %d?"
+            % (len(self.checks.selection()), len(selected_sales)),
+        ):
+            return
+
+        for sale in selected_sales:
+            # ID записи в первом столбце (скрытом)
+            values = self.sales.item(sale)["values"]
+            self.db.return_sale(values[0])
+
+        for check in self.checks.selection():
+            values = self.checks.item(check)["values"]
+            self.db.return_check(values[0])
+
+        self.update_sales()
+        self.goods.update_data()
+
+    def on_reset(self):
+        if not _msg.askyesno("Подтверждение", "Сбросить всю выручку?"):
+            return
+
+        self.db.reset_sales()
+        self.update_sales()
 
 
 if __name__ == "__main__":
