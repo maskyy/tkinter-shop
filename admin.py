@@ -6,6 +6,7 @@ import tkinter.ttk as _ttk
 import logo
 import util
 from db_sqlite import Database
+from hint import Hint
 from style import Button, Entry
 from tableview import TableView
 from tabs import Tabs
@@ -51,6 +52,11 @@ class Admin(Window):
         self.goods.update_data()
         self.goods.pack(expand=True, fill="both", padx=20, pady=20)
         Button(frame, text="Обновить", command=self.goods.update_data).pack(pady=15)
+        Hint(
+            frame,
+            hint="""В данном окне показана таблица всех товаров в магазине.
+Чтобы обновить таблицу, можно нажать соответствующую кнопку.""",
+        ).pack()
         return frame
 
     def create_delivery(self, master):
