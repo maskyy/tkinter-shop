@@ -10,3 +10,8 @@ def set_close_handler(win, func):
 def show_error(text):
     _msg.showerror("Ошибка", text)
     return False
+
+
+def show_info(text):
+    _msg.showinfo("Информация", text)
+    return True

@@ -6,7 +6,7 @@ import tkinter.ttk as _ttk
 import logo
 import util
 from db_sqlite import Database
-from style import Entry
+from style import Button, Entry
 from tableview import TableView
 from tabs import Tabs
 from window import Window
@@ -50,9 +50,7 @@ class Admin(Window):
         self.goods = TableView(frame, self.db, "goods", self.goods_cols)
         self.goods.update_data()
         self.goods.pack(expand=True, fill="both", padx=20, pady=20)
-        _ttk.Button(frame, text="Обновить", command=self.goods.update_data).pack(
-            pady=15
-        )
+        Button(frame, text="Обновить", command=self.goods.update_data).pack(pady=15)
         return frame
 
     def create_delivery(self, master):
@@ -65,10 +63,10 @@ class Admin(Window):
         subframe = _ttk.Frame(frame)
         subframe.grid(column=1, row=0, sticky="n", padx=10, pady=20)
         self.product_info = self.add_product_entries(subframe)
-        _ttk.Button(subframe, text="Добавить", command=self.add_product).pack(pady=2)
-        _ttk.Button(
-            subframe, text="Завершить поставку", command=self.make_delivery
-        ).pack(pady=40)
+        Button(subframe, text="Добавить", command=self.add_product).pack(pady=10)
+        Button(subframe, text="Завершить поставку", command=self.make_delivery).pack(
+            pady=40
+        )
 
         return frame
 

@@ -4,6 +4,7 @@ import tkinter.messagebox as _msg
 import tkinter.ttk as _ttk
 
 import style
+import util
 
 __all__ = ["Roles", "Login"]
 
@@ -17,16 +18,12 @@ _credentials = {"admin": ("123", Roles.ADMIN), "cashier": ("123", Roles.CASHIER)
 
 
 class Login(_ttk.Frame):
-    def show_error(text):
-        _msg.showerror("Ошибка", text)
-        return False
-
     def register(login, password):
         login, password = login.get_strip(), password.get_strip()
         if not login or not password:
-            return Login.show_error("Введите логин и пароль")
+            return util.show_error("Введите логин и пароль")
         if login in _credentials:
-            return Login.show_error("Логин уже занят")
+            return util.show_error("Логин уже занят")
 
         answer = _msg.askquestion("Роль", "Да - администратор, нет - кассир")
         role = Roles.ADMIN if answer == "yes" else Roles.CASHIER
@@ -37,13 +34,13 @@ class Login(_ttk.Frame):
     def check_credentials(login_entry, password_entry, handler):
         login, password = login_entry.get_strip(), password_entry.get_strip()
         if not login or not password:
-            return Login.show_error("Введите логин и пароль")
+            return util.show_error("Введите логин и пароль")
         if login not in _credentials:
-            return Login.show_error("Логин не существует")
+            return util.show_error("Логин не существует")
 
         password2, role = _credentials[login]
         if password != password2:
-            return Login.show_error("Неверный пароль")
+            return util.show_error("Неверный пароль")
 
         handler(role)
         login_entry.delete(0, "end")

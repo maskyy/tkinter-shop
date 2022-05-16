@@ -96,15 +96,15 @@ class Database:
         current = current[0]
         new = current + amount
         self.cur.execute(
-            "UPDATE goods SET amount = ? WHERE barcode = ?", (barcode, new)
+            "UPDATE goods SET amount = ? WHERE barcode = ?", (new, barcode)
         )
 
     def get_new_check_id(self):
         result = self.cur.execute("SELECT MAX(id)+1 FROM checks").fetchone()[0]
         return 1 if not result else result
 
-    def add_check(self, id_):
-        self.cur.execute("INSERT INTO checks VALUES (?, 0)", (id_,))
+    def add_check(self, id_, sum_):
+        self.cur.execute("INSERT INTO checks VALUES (?, ?)", (id_, sum_))
 
     def sell_product(self, check_id, barcode, amount, cost):
         """
@@ -122,6 +122,8 @@ class Database:
             "INSERT INTO sales VALUES (NULL, ?, ?, ?, ?)",
             (check_id, barcode, amount, cost),
         )
+        """
         self.cur.execute(
             "UPDATE checks SET sum = sum + ? WHERE id = ?", (cost, check_id)
         )
+        """

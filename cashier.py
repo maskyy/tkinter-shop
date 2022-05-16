@@ -4,8 +4,8 @@ import tkinter.ttk as _ttk
 import logo
 import util
 from db_sqlite import Database
-from login import Login
-from style import Entry
+from login import Roles, Login
+from style import Button, Entry
 from tableview import TableView
 from tabs import Tabs
 from window import Window
@@ -53,12 +53,13 @@ class Cashier(Window):
         check_frame = _ttk.Frame(main)
         check_frame.grid(column=1, row=2)
 
-        self.check_sum = _ttk.Label(check_frame, text="Сумма: 0")
-        self.check_sum.pack(pady=5)
-        _ttk.Button(check_frame, text="Продать", command=self.on_sell).pack(pady=5)
-        _ttk.Button(check_frame, text="Вернуть", command=self.on_return).pack(pady=5)
-
         self.create_confirm_window()
+
+        self.check_sum = 0
+        self.sum_label = _ttk.Label(check_frame, text="Сумма: 0")
+        self.sum_label.pack(pady=5)
+        Button(check_frame, text="Продать", command=self.on_sell).pack(pady=5)
+        Button(check_frame, text="Вернуть", command=self.on_return).pack(pady=5)
 
     def create_entries(self, master):
         _ttk.Label(master, text="Штрихкод").grid(column=0, row=0, padx=5)
@@ -69,7 +70,7 @@ class Cashier(Window):
         self.amount = Entry(master)
         self.amount.grid(column=1, row=1, padx=5, pady=5)
 
-        self.add = _ttk.Button(master, text="Добавить", command=self.on_add_item)
+        self.add = Button(master, text="Добавить", command=self.on_add_item)
         self.add.grid(column=0, row=2, columnspan=2, pady=5)
 
         self.code.bind("<Return>", lambda _: self.add.invoke())
@@ -78,7 +79,13 @@ class Cashier(Window):
     def create_confirm_window(self):
         self.confirm_window = _tk.Toplevel(self)
         self.confirm_return = Login(
-            self.confirm_window, [("Подтвердить", lambda l, p: None)]
+            self.confirm_window,
+            [
+                (
+                    "Подтвердить",
+                    lambda l, p: Login.check_credentials(l, p, self.check_return),
+                )
+            ],
         )
         self.confirm_return.pack()
         self.confirm_window.withdraw()
@@ -111,14 +118,14 @@ class Cashier(Window):
         if amount > values[3]:
             return util.show_error("Нельзя продать больше товаров, чем есть в наличии")
 
-        self.change_by_amount(code, -amount, row)
+        self.change_by_amount(-amount, row)
         self.add_to_check(code, amount, row)
         self.update_check_sum()
 
         self.code.delete(0, "end")
         self.amount.delete(0, "end")
 
-    def change_by_amount(self, code, amount, row):
+    def change_by_amount(self, amount, row):
         values = self.goods.item(row)["values"]
         values[3] += amount
         self.goods.item(row, values=values)
@@ -128,10 +135,43 @@ class Cashier(Window):
         self.check.insert("", "end", values=(code, amount, cost))
 
     def on_sell(self):
-        pass
+        if len(self.check.get_children()) == 0:
+            return util.show_error("В чеке нет товаров")
+
+        self.db.add_check(self.check_id, self.check_sum)
+        for row in self.check.get_children():
+            data = (self.check_id, *self.check.item(row)["values"])
+            self.db.sell_product(*data)
+
+        self.check.clear()
+        self.db.save()
+
+        util.show_info("Чек №%d на сумму %d" % (self.check_id, self.check_sum))
+        self.update_check_id()
+        self.update_check_sum()
+
+    def check_return(self, role):
+        if role != Roles.ADMIN:
+            return util.show_error("Введите логин и пароль администратора")
+        self.do_return()
+        self.confirm_window.withdraw()
 
     def on_return(self):
-        pass
+        if not self.check.selection():
+            return util.show_error("Выберите товары для возврата")
+        self.confirm_window.deiconify()
+
+    def do_return(self):
+        if not self.check.selection():
+            return util.show_error("Выберите товары для возврата")
+
+        for row in self.check.selection():
+            values = self.check.item(row)["values"]
+            goods_row, _ = self.find_row(self.goods, values[0])
+            self.change_by_amount(values[1], goods_row)
+            self.check.delete(row)
+
+        self.update_check_sum()
 
     def update_check_id(self):
         self.check_id = self.db.get_new_check_id()
@@ -141,7 +181,8 @@ class Cashier(Window):
         result = 0
         for row in self.check.get_children():
             result += self.check.item(row)["values"][2]
-        self.check_sum.config(text="Сумма: %d" % result)
+        self.check_sum = result
+        self.sum_label.config(text="Сумма: %d" % self.check_sum)
 
 
 if __name__ == "__main__":
