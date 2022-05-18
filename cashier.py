@@ -93,7 +93,6 @@ class Cashier(Window):
     def create_confirm_window(self):
         self.confirm_window = _tk.Toplevel(self)
         self.confirm_window.overrideredirect(True)
-        util.center_window(self.confirm_window)
         self.confirm_return = Login(
             self.confirm_window,
             [
@@ -179,6 +178,7 @@ class Cashier(Window):
         if not self.check.selection():
             return util.show_error("Выберите товары для возврата")
         self.confirm_window.deiconify()
+        util.center_window(self.confirm_window)
 
     def do_return(self):
         if not self.check.selection():
