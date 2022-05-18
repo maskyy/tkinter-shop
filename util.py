@@ -15,3 +15,10 @@ def show_error(text):
 def show_info(text):
     _msg.showinfo("Информация", text)
     return True
+
+
+def center_window(win):
+    w, h = [int(x) for x in win.geometry().split("+")[0].split("x")]
+    x = (win.winfo_screenwidth() - w) // 2
+    y = (win.winfo_screenheight() - h) // 2
+    win.geometry("+%d+%d" % (x, y))

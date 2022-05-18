@@ -4,7 +4,8 @@ import tkinter.ttk as _ttk
 import logo
 import util
 from db_sqlite import Database
-from login import Roles, Login
+from hint import Hint
+from login import Login, Roles
 from style import Button, Entry
 from tableview import TableView
 from tabs import Tabs
@@ -60,6 +61,12 @@ class Cashier(Window):
         self.sum_label.pack(pady=5)
         Button(check_frame, text="Продать", command=self.on_sell).pack(pady=5)
         Button(check_frame, text="Вернуть", command=self.on_return).pack(pady=5)
+        Hint(
+            check_frame,
+            hint="""Чтобы реализовать товары, необходимо нажать на кнопку "Продать".
+Чек должен содержать хотя бы один товар.
+Чтобы отменить реализацию товаров, нужно выбрать товары для отмены, нажать кнопку "Вернуть" и ввести логин и пароль администратора.""",
+        ).pack(pady=5)
 
     def create_entries(self, master):
         _ttk.Label(master, text="Штрихкод").grid(column=0, row=0, padx=5)
@@ -73,11 +80,20 @@ class Cashier(Window):
         self.add = Button(master, text="Добавить", command=self.on_add_item)
         self.add.grid(column=0, row=2, columnspan=2, pady=5)
 
+        Hint(
+            master,
+            hint="""Чтобы выбрать товар, нужно нажать на него в таблице товаров либо ввести штрихкод.
+Количество товаров должно быть не менее 1 и не более, чем есть товаров в наличии.
+Кнопка "Добавить" добавляет товар в чек.""",
+        ).grid(column=2, row=0, rowspan=2)
+
         self.code.bind("<Return>", lambda _: self.add.invoke())
         self.amount.bind("<Return>", lambda _: self.add.invoke())
 
     def create_confirm_window(self):
         self.confirm_window = _tk.Toplevel(self)
+        self.confirm_window.overrideredirect(True)
+        util.center_window(self.confirm_window)
         self.confirm_return = Login(
             self.confirm_window,
             [
@@ -157,6 +173,9 @@ class Cashier(Window):
         self.confirm_window.withdraw()
 
     def on_return(self):
+        if self.confirm_window.winfo_ismapped():
+            self.confirm_window.withdraw()
+            return
         if not self.check.selection():
             return util.show_error("Выберите товары для возврата")
         self.confirm_window.deiconify()

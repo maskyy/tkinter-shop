@@ -5,6 +5,7 @@ import logo
 import util
 from admin import Admin
 from cashier import Cashier
+from hint import Hint
 from login import Login, Roles
 from style import init_style
 from window import RootWindow
@@ -33,6 +34,11 @@ class MainWindow(RootWindow):
         login_window.password.bind(
             "<Return>", lambda _: login_window.buttons[1].invoke()
         )
+
+        Hint(
+            self,
+            hint="Введите логин и пароль кассира или администратора либо зарегистрируйтесь.",
+        ).pack()
 
         if len(sys.argv) >= 3:
             login_window.login.insert(0, sys.argv[1])
